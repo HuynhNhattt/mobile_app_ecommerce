@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Proj_ecom_mobile">
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.user.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
