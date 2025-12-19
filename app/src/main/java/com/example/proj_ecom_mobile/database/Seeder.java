@@ -1,5 +1,7 @@
 package com.example.proj_ecom_mobile.database;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 import com.example.proj_ecom_mobile.model.Product;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -8,22 +10,29 @@ import java.util.List;
 
 public class Seeder {
 
-    public static void seedProductData() {
+    // Thêm tham số Context để kiểm tra bộ nhớ máy
+    public static void seedProductData(Context context) {
+        // 1. KIỂM TRA: Máy này đã từng nạp dữ liệu chưa?
+        SharedPreferences prefs = context.getSharedPreferences("AppConfig", Context.MODE_PRIVATE);
+        boolean isSeeded = prefs.getBoolean("is_data_seeded", false);
+
+        if (isSeeded) {
+            Log.d("Seeder", "Dữ liệu đã có sẵn. Bỏ qua bước nạp mẫu.");
+            return; // DỪNG LẠI NGAY nếu đã nạp rồi!
+        }
+
+        // 2. NẾU CHƯA NẠP -> TIẾN HÀNH NẠP (Dữ liệu ảnh thật của bạn)
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         List<Product> products = new ArrayList<>();
 
         // ==================================================================
-        // 1. NHÓM ÁO (TOPS) - Sơ mi, Thun, Polo, Len
+        // 1. NHÓM ÁO (TOPS)
         // ==================================================================
-
-        // Dữ liệu cũ của bạn (Giữ lại để không mất công)
         products.add(new Product("p001", "Áo Sơ Mi Poplin Tay Ngắn", 650000, "Chất liệu vải Poplin thoáng mát, phom dáng rộng rãi thoải mái cho ngày hè.", "https://product.hstatic.net/200000911315/product/11_f9ad351033184b4a9045b6987f1df2cf.png", "Ao"));
         products.add(new Product("p002", "Áo Sơ Mi Đỏ Thẫm Relaxed", 650000, "Thiết kế tối giản với tông màu đỏ thẫm sang trọng, phù hợp đi làm và đi chơi.", "https://product.hstatic.net/200000911315/product/15_3fa92f3bd913427f82f2ecd342044589.jpg", "Ao"));
         products.add(new Product("p017", "Áo Len Dệt Kim Khóa Kéo", 950000, "Áo khoác len nhẹ có khóa kéo tiện lợi, phong cách hiện đại.", "https://static.massimodutti.net/assets/public/9632/424a/d3a64aa3bdeb/a020e3dbe718/01088238775-o1/01088238775-o1.jpg?ts=1759322753170&w=undefined&f=auto", "Ao"));
         products.add(new Product("p019", "Áo Thun Cổ Lọ Cotton", 890000, "Chất liệu Cotton mềm mại, giữ ấm tốt, dễ phối với áo khoác.", "https://cdn.hstatic.net/products/200000911315/background_ac6079a3c4654a16aa24f6c17c8347f2.jpg", "Ao"));
         products.add(new Product("p021", "Áo Polo Dệt Kim", 790000, "Áo Polo phom dáng suông, chất liệu dệt kim cao cấp thoáng khí.", "https://product.hstatic.net/200000911315/product/12_4f4ac6dc46f74b52bff8a95755669b7d.jpg", "Ao"));
-
-        // Dữ liệu MỚI (Lấy cảm hứng từ Gian Saigon)
         products.add(new Product("p022", "Áo Sơ Mi Linen Cổ Tàu", 720000, "Vải Linen tự nhiên thoáng mát, cổ lãnh tụ (Band collar) tinh tế.", "https://image.hm.com/assets/hm/bd/7f/bd7f64a25fac0aed14a4c66063fc384afe5cbe40.jpg?imwidth=2160", "Ao"));
         products.add(new Product("p023", "Áo Sơ Mi Oxford Xanh Nhạt", 680000, "Vải Oxford dày dặn đứng form, màu xanh pastel nhẹ nhàng.", "https://product.hstatic.net/200000911315/product/sm_95f3cfacbbd34cb291bab5ecefc88e50.jpg", "Ao"));
         products.add(new Product("p024", "Áo Thun Heavy Cotton Đen", 450000, "Áo phông định lượng cao (250gsm), không bai dão, form Boxy.", "https://cdn.hstatic.net/products/200000911315/4_8ee3f6b490d24cbebbff9aa443de4f6e.jpg", "Ao"));
@@ -50,17 +59,13 @@ public class Seeder {
         products.add(new Product("p045", "Áo Thun Polo Sọc Ngang", 550000, "Họa tiết kẻ ngang nhỏ, phong cách trẻ trung.", "https://4men.com.vn/thumbs/2021/05/ao-polo-soc-ngang-mau-xanh-po038-19566-p.jpg", "Ao"));
 
         // ==================================================================
-        // 2. NHÓM QUẦN (BOTTOMS) - Tây, Jeans, Short, Kaki
+        // 2. NHÓM QUẦN (BOTTOMS)
         // ==================================================================
-
-        // Dữ liệu cũ
         products.add(new Product("p003", "Quần Tây Ống Suông Nâu", 850000, "Quần âu ống suông lịch lãm, chất liệu vải pha len mềm rủ.", "https://product.hstatic.net/200000911315/product/3_d76edf059d2c409e8daa25a9da72680c.png", "Quan"));
         products.add(new Product("p004", "Quần Xếp Ly Ống Rộng", 890000, "Thiết kế xếp ly tinh tế, tạo độ phồng tự nhiên và thoải mái khi di chuyển.", "https://product.hstatic.net/200000911315/product/25_cdf04965ef8349319fa8e0d53eb0f0cd.jpg", "Quan"));
         products.add(new Product("p006", "Quần Jeans Ống Đứng", 890000, "Quần Jeans màu xanh cổ điển, phom đứng tôn dáng.", "https://product.hstatic.net/200000911315/product/12_e901bcceabe24e30993701346d9a4567.png", "Quan"));
         products.add(new Product("p010", "Quần Short Bermuda", 750000, "Quần short dài ngang gối, phong cách trẻ trung năng động.", "https://product.hstatic.net/200000911315/product/15_bd9ff09d6c634cb8855a1d6825aab36c.jpg", "Quan"));
         products.add(new Product("p015", "Quần Jeans Màu Kem", 890000, "Màu kem nhã nhặn, dễ dàng phối với các loại áo tối màu.", "https://cdn.hstatic.net/products/200000911315/jeans_trang_9a8d4513c6a745c9b1550d342c5ffbbe_master.jpg", "Quan"));
-
-        // Dữ liệu MỚI
         products.add(new Product("p046", "Quần Tây Gurkha Cạp Cao", 980000, "Thiết kế đai lưng Gurkha (không cần thắt lưng), cạp cao tôn dáng.", "https://product.hstatic.net/200000911315/product/brand_gian-2_0b30b3b7617b46308267a8f9a148986f.png", "Quan"));
         products.add(new Product("p047", "Quần Chinos Màu Be", 750000, "Vải Kaki co giãn nhẹ, phom Slim-fit gọn gàng.", "https://product.hstatic.net/200000911315/product/web2_837b78d125004625bebd7771adf2b9ec.jpg", "Quan"));
         products.add(new Product("p048", "Quần Jeans Đen Rách Gối", 920000, "Màu đen tuyền, chi tiết rách gối bụi bặm (Streetwear).", "https://cdn.dafc.com.vn/catalog/product/dafc/1190325_000_66b990396dcd7.jpg", "Quan"));
@@ -83,10 +88,8 @@ public class Seeder {
         products.add(new Product("p065", "Quần Yếm Denim (Overalls)", 1100000, "Phong cách Workwear, yếm bò màu xanh đậm.", "https://product.hstatic.net/1000026602/product/web_n_c004c6b9992d40728161987590253d2c_master.jpg", "Quan"));
 
         // ==================================================================
-        // 3. NHÓM ÁO KHOÁC (OUTERWEAR) - Blazer, Jacket, Mangto
+        // 3. NHÓM ÁO KHOÁC (OUTERWEAR)
         // ==================================================================
-
-        // Dữ liệu cũ
         products.add(new Product("p005", "Áo Khoác Dạ Dáng Rộng", 980000, "Áo khoác dạ phom rộng thời thượng, giữ ấm tuyệt đối.", "https://cdn.hstatic.net/products/200000911315/hi_4de66007d256457dbe197d52f5d3ca2f.jpg", "AoKhoac"));
         products.add(new Product("p007", "Áo Mang-to Hai Hàng Khuy", 3890000, "Áo choàng dài cổ điển, điểm nhấn sang trọng cho mùa đông.", "https://cdn.hstatic.net/products/200000911315/layer_1_c4ba580a682a407a9ea4e78608d1ad58.jpg", "AoKhoac"));
         products.add(new Product("p009", "Áo Khoác An Nam", 1090000, "Lấy cảm hứng từ trang phục truyền thống, cách tân hiện đại.", "https://cdn.hstatic.net/products/200000911315/4_2_ae40ba0b64a948f79730d96c038497df.jpg", "AoKhoac"));
@@ -94,11 +97,6 @@ public class Seeder {
         products.add(new Product("p014", "Áo Khoác Denim Workwear", 980000, "Chất liệu Denim bền bỉ, màu xanh Cerulean lạ mắt.", "https://cdn.hstatic.net/products/200000911315/30_29cec18eb59448c2bb683454f26c684a.jpg", "AoKhoac"));
         products.add(new Product("p018", "Áo Blazer Oversized Nâu", 3490000, "Blazer phom rộng phóng khoáng, phong cách Hàn Quốc.", "https://product.hstatic.net/200000911315/product/13_bc464cd08ed44a47944a0ed6d6ab8959.png", "AoKhoac"));
         products.add(new Product("p020", "Áo Khoác Dù Có Mũ", 2450000, "Chất liệu Nylon chống thấm nước nhẹ, tiện lợi khi đi mưa phùn.", "https://yame.vn/cdn/shop/files/ao-khoac-non-branded-04-xanh-reu-1174884672.jpg", "AoKhoac"));
-
-
-
-
-// Dữ liệu MỚI
         products.add(new Product("p066", "Áo Blazer Đen Basic", 2500000, "Thiết kế 2 cúc cơ bản, đệm vai mỏng, dễ phối đồ.", "https://product.hstatic.net/200000911315/product/11_2_b8cfcf20fa2c444f96e0fda5e02e548b.jpg", "AoKhoac"));
         products.add(new Product("p067", "Áo Bomber Da Lộn", 1500000, "Da lộn nhân tạo (Suede) mềm mịn, bo chun cổ tay.", "https://product.hstatic.net/200000911315/product/28_05e3f13367654ee0aada29b0f5412c61.jpg", "AoKhoac"));
         products.add(new Product("p068", "Áo Khoác Harrington Be", 1200000, "Cổ đứng, lót kẻ caro bên trong, phong cách Anh Quốc.", "https://product.hstatic.net/200000870593/product/bh1172_cb8_20_4c16998be20d44709452310e611e7f81_1024x1024.jpg", "AoKhoac"));
@@ -115,18 +113,12 @@ public class Seeder {
         products.add(new Product("p079", "Áo Cardigan Dệt Kim Dày", 1050000, "Len dày vặn thừng, cúc gỗ, phong cách Đà Lạt.", "https://cdn.hstatic.net/products/200000911315/28_89dfb5fbf1fb473daa613fefdda6e743.jpg", "AoKhoac"));
         products.add(new Product("p080", "Áo Khoác Coach Jacket", 850000, "Dáng áo huấn luyện viên, cúc bấm, in chữ sau lưng.", "https://product.hstatic.net/200000911315/product/19_3c5006142028494aa2c8dea29afa6233.jpg", "AoKhoac"));
 
-
-// ==================================================================
-
-
-        // 4. NHÓM PHỤ KIỆN (ACCESSORIES) - Túi, Ví, Thắt lưng
         // ==================================================================
-
+        // 4. NHÓM PHỤ KIỆN (ACCESSORIES)
+        // ==================================================================
         products.add(new Product("p011", "Túi Tote Da Lộn", 890000, "Túi xách cỡ lớn đựng vừa laptop, chất liệu da lộn mềm.", "https://product.hstatic.net/200000911315/product/gian_-_13_759f2fb59cfa4ceb90c85a5ab2402988.png", "PhuKien"));
         products.add(new Product("p012", "Ví Đựng Thẻ Da Bò", 250000, "Nhỏ gọn, tiện lợi, làm từ da bò thật màu đỏ rượu.", "https://cdn.hstatic.net/products/200000911315/33_665069daabe54b84adc7e922e9e8cd8a.jpg", "PhuKien"));
         products.add(new Product("p016", "Thắt Lưng Da Cổ Điển", 650000, "Phụ kiện không thể thiếu cho quý ông, khóa kim loại không gỉ.", "https://cdn.hstatic.net/products/200000911315/1_75cb243e2e8a418f8a962b1e4ffb8a90.png", "PhuKien"));
-
-        // Dữ liệu MỚI
         products.add(new Product("p081", "Túi Đeo Chéo Canvas", 450000, "Vải bố Canvas bền bỉ, quai đeo bản to.", "https://product.hstatic.net/1000238555/product/dcffggg_cba3a2ae4da2473d8e56ade28f1fdb60_compact.jpg", "PhuKien"));
         products.add(new Product("p082", "Balo Laptop Da PU", 1200000, "Da tổng hợp cao cấp, chống nước, đựng laptop 15 inch.", "https://product.hstatic.net/1000257344/product/kakapo_0006_4cf086552a4c46c9b182b687b97e0d8b_master.jpg", "PhuKien"));
         products.add(new Product("p083", "Mũ Bucket Vải Dù", 320000, "Mũ tai bèo vành nhỏ, màu đen trơn.", "https://pubcdn.ivymoda.com/files/news/2023/06/03/73a3f43839e2def49ca71fb73be2e341.jpg", "PhuKien"));
@@ -149,11 +141,17 @@ public class Seeder {
         products.add(new Product("p100", "Móc Khóa Da Handmade", 90000, "Móc khóa da bò dập tên, phụ kiện nhỏ xinh.", "https://thecrafthouse.vn/cdn/shop/files/Dogcharm_ChoiBanh_3_11zon.jpg", "PhuKien"));
 
 
-        // Vòng lặp đẩy lên Firebase (Giữ nguyên logic cũ của bạn)
+        // Vòng lặp đẩy lên Firebase
         for (Product p : products) {
             db.collection("products").document(p.getId()).set(p)
                     .addOnSuccessListener(aVoid -> Log.d("Seeder", "Đã thêm: " + p.getName()))
                     .addOnFailureListener(e -> Log.e("Seeder", "Lỗi: " + e.getMessage()));
         }
+
+        // 3. Đánh dấu đã nạp xong (để lần sau không nạp nữa)
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("is_data_seeded", true);
+        editor.apply();
+        Log.d("Seeder", "Hoàn tất nạp dữ liệu lần đầu.");
     }
 }
