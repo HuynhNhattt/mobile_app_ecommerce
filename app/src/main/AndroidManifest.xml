@@ -24,10 +24,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.user.ProductDetailActivity" />
-        <activity android:name=".activity.user.CartActivity" />
-        <activity android:name=".activity.user.CheckoutActivity" />
-
     </application>
 
 </manifest>
