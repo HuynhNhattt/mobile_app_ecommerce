@@ -24,6 +24,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -31,13 +32,12 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
     private SessionManager sessionManager;
+    private FirebaseFirestore db;
 
     private ImageView btnGoogle;
     private EditText edtEmail, edtPassword;
     private Button btnLogin;
     private TextView tvRegister;
-    private TextView tvForgotPassword;
-    private ImageView imgBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
         sessionManager = new SessionManager(this);
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -55,18 +56,6 @@ public class LoginActivity extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         initView();
-
-        imgBack.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-            finish();
-        });
-
-        tvForgotPassword.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
-            startActivity(intent);
-        });
 
         btnGoogle.setOnClickListener(v -> signInWithGoogle());
 
@@ -79,13 +68,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        imgBack = findViewById(R.id.img_back_login);
         btnGoogle = findViewById(R.id.btn_google_sign_in);
         edtEmail = findViewById(R.id.edt_email);
         edtPassword = findViewById(R.id.edt_password);
         btnLogin = findViewById(R.id.btn_login);
         tvRegister = findViewById(R.id.tv_switch_register);
-        tvForgotPassword = findViewById(R.id.tv_forgot_pass);
     }
 
     private void handleLoginWithEmail() {
@@ -143,15 +130,34 @@ public class LoginActivity extends AppCompatActivity {
 
     private void updateUI(FirebaseUser user) {
         if (user != null) {
-            String email = user.getEmail();
-            sessionManager.createLoginSession(email, "user");
+            db.collection("Users").document(user.getUid())
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            String role = documentSnapshot.getString("role");
+                            String email = user.getEmail();
 
-            Toast.makeText(this, "Xin chào " + email, Toast.LENGTH_SHORT).show();
+                            sessionManager.createLoginSession(email, role);
+                            Toast.makeText(this, "Xin chào " + email, Toast.LENGTH_SHORT).show();
 
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
+                            Intent intent;
+                            if ("admin".equals(role)) {
+                                intent = new Intent(LoginActivity.this, com.example.proj_ecom_mobile.activity.admin.AdminMainActivity.class);
+                            } else {
+                                intent = new Intent(LoginActivity.this, MainActivity.class);
+                            }
+
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Lỗi: Không tìm thấy thông tin user", Toast.LENGTH_SHORT).show();
+                            mAuth.signOut();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Lỗi kết nối: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
         }
     }
 }
