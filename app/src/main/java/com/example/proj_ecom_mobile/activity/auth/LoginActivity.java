@@ -32,13 +32,11 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private SessionManager sessionManager;
 
-    // Khai báo các biến giao diện
     private ImageView btnGoogle;
     private EditText edtEmail, edtPassword;
     private Button btnLogin;
     private TextView tvRegister;
-
-    // 1. Khai báo thêm biến nút Back (X)
+    private TextView tvForgotPassword;
     private ImageView imgBack;
 
     @Override
@@ -49,7 +47,6 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         sessionManager = new SessionManager(this);
 
-        // Cấu hình Google Sign In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
@@ -59,40 +56,38 @@ public class LoginActivity extends AppCompatActivity {
 
         initView();
 
-        // 2. Xử lý sự kiện nút Back (X) - Quay về trang chủ
         imgBack.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            // Cờ này giúp quay lại Main mà không tạo chồng Activity mới
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();
         });
 
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+            startActivity(intent);
+        });
+
         btnGoogle.setOnClickListener(v -> signInWithGoogle());
 
-        // Nút Chuyển sang Đăng ký
         tvRegister.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
 
-        // Nút Đăng nhập bằng Email/Pass
         btnLogin.setOnClickListener(v -> handleLoginWithEmail());
     }
 
     private void initView() {
-        // Ánh xạ ID chuẩn theo file layout xml
-        // 3. Ánh xạ nút Back (ID phải trùng với file XML activity_login.xml)
         imgBack = findViewById(R.id.img_back_login);
-
         btnGoogle = findViewById(R.id.btn_google_sign_in);
         edtEmail = findViewById(R.id.edt_email);
         edtPassword = findViewById(R.id.edt_password);
         btnLogin = findViewById(R.id.btn_login);
         tvRegister = findViewById(R.id.tv_switch_register);
+        tvForgotPassword = findViewById(R.id.tv_forgot_pass);
     }
 
-    // --- XỬ LÝ ĐĂNG NHẬP THƯỜNG ---
     private void handleLoginWithEmail() {
         String email = edtEmail.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
@@ -113,7 +108,6 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // --- XỬ LÝ GOOGLE ---
     private void signInWithGoogle() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
