@@ -7,11 +7,9 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.proj_ecom_mobile.R;
 import com.example.proj_ecom_mobile.adapter.CartAdapter;
 import com.example.proj_ecom_mobile.database.SQLHelper;
@@ -20,19 +18,19 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 public class CartActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerCart;
+    private RecyclerView recyclerView;
+    private CartAdapter adapter;
+    private ArrayList<CartItem> cartList;
     private TextView txtTotalPrice;
     private Button btnCheckout;
     private ImageView btnBack;
+
     private SQLHelper sqlHelper;
-    private ArrayList<CartItem> cartList;
-    private CartAdapter adapter;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
@@ -44,67 +42,72 @@ public class CartActivity extends AppCompatActivity {
         sqlHelper = new SQLHelper(this);
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        cartList = new ArrayList<>();
 
         initView();
 
-        loadCartData();
+        cartList = new ArrayList<>();
+        adapter = new CartAdapter(this, cartList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapter);
+
+        loadCart();
 
         btnBack.setOnClickListener(v -> finish());
 
         btnCheckout.setOnClickListener(v -> {
-            if (cartList.size() > 0) {
-                Intent intent = new Intent(CartActivity.this, CheckoutActivity.class);
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, "Giỏ hàng đang trống!", Toast.LENGTH_SHORT).show();
+            if (cartList.isEmpty()) {
+                Toast.makeText(this, "Giỏ hàng trống!", Toast.LENGTH_SHORT).show();
+                return;
             }
+            if (mAuth.getCurrentUser() == null) {
+                Toast.makeText(this, "Vui lòng đăng nhập để thanh toán", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            startActivity(new Intent(CartActivity.this, CheckoutActivity.class));
         });
     }
 
     private void initView() {
-        recyclerCart = findViewById(R.id.recycler_cart);
+        recyclerView = findViewById(R.id.recycler_cart);
         txtTotalPrice = findViewById(R.id.txt_total_price);
         btnCheckout = findViewById(R.id.btn_checkout);
         btnBack = findViewById(R.id.btn_back);
     }
 
-    private void loadCartData() {
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-
-        if (currentUser == null) {
-            cartList = sqlHelper.getCartItems();
-            setupRecyclerView();
+    public void loadCart() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            // Load từ SQL (Chế độ offline)
+            cartList.clear();
+            cartList.addAll(sqlHelper.getCartItems());
+            adapter.notifyDataSetChanged();
+            updateTotalPrice();
         } else {
-            db.collection("Cart")
-                    .whereEqualTo("id_user", currentUser.getUid())
-                    .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
+            // Load từ Firebase (Chế độ online)
+            db.collection("Cart").whereEqualTo("id_user", user.getUid())
+                    .addSnapshotListener((value, error) -> {
+                        if (error != null) return;
                         cartList.clear();
-                        for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                            String id = doc.getString("id_product");
-                            String name = doc.getString("name");
-                            Double price = doc.getDouble("price");
-                            String image = doc.getString("image");
-                            Long quantity = doc.getLong("quantity");
-                            String size = doc.getString("size");
+                        if (value != null) {
+                            for (DocumentSnapshot doc : value) {
+                                CartItem item = doc.toObject(CartItem.class);
 
-                            if (id != null && price != null && quantity != null) {
-                                // SỬA Ở ĐÂY: Thêm số 0 ở cuối cho tham số 'stock'
-                                cartList.add(new CartItem(id, name, price, image, quantity.intValue(), size, 0));
+                                // --- ĐOẠN FIX QUAN TRỌNG: Map dữ liệu thủ công ---
+                                item.setProductId(doc.getString("id_product"));
+                                item.setProductName(doc.getString("name"));
+                                item.setProductImage(doc.getString("image"));
+
+                                // Lấy giá từ trường "price" trên Firebase gán vào "productPrice"
+                                Double price = doc.getDouble("price");
+                                item.setProductPrice(price != null ? price : 0);
+
+                                cartList.add(item);
                             }
                         }
-                        setupRecyclerView();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(CartActivity.this, "Lỗi tải giỏ hàng", Toast.LENGTH_SHORT).show());
+                        adapter.notifyDataSetChanged();
+                        updateTotalPrice();
+                    });
         }
-    }
-
-    private void setupRecyclerView() {
-        adapter = new CartAdapter(this, cartList);
-        recyclerCart.setLayoutManager(new LinearLayoutManager(this));
-        recyclerCart.setAdapter(adapter);
-        updateTotalPrice();
     }
 
     public void updateTotalPrice() {
@@ -114,11 +117,5 @@ public class CartActivity extends AppCompatActivity {
         }
         DecimalFormat formatter = new DecimalFormat("###,###,###");
         txtTotalPrice.setText(formatter.format(total) + "đ");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadCartData();
     }
 }

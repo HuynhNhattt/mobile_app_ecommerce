@@ -35,11 +35,6 @@ public class SQLHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void queryData(String sql) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL(sql);
-    }
-
     public void syncProducts(ArrayList<Product> list) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.beginTransaction();

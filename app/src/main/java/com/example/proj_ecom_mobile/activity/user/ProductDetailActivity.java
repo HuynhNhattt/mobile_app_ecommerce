@@ -23,14 +23,14 @@ import java.util.Map;
 public class ProductDetailActivity extends AppCompatActivity {
 
     private ImageView imgDetail, btnBack;
-    private TextView txtName, txtPrice, txtDesc;
+    private TextView txtName, txtPrice, txtDesc, txtStockInfo;
     private TextView btnS, btnM, btnL, btnXL;
     private Button btnAddToCart;
     private Product product;
     private SQLHelper sqlHelper;
     private String selectedSize = null;
+    private int currentStockOfSize = 0;
 
-    // Khai báo thêm Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
@@ -58,6 +58,9 @@ public class ProductDetailActivity extends AppCompatActivity {
                 DecimalFormat formatter = new DecimalFormat("###,###,###");
                 txtPrice.setText(formatter.format(product.getPrice()) + "đ");
                 Glide.with(this).load(product.getImageUrl()).into(imgDetail);
+
+                // Mặc định hiển thị tổng kho
+                txtStockInfo.setText("Tổng tồn kho: " + product.getTotalStock());
             }
         }
 
@@ -69,11 +72,15 @@ public class ProductDetailActivity extends AppCompatActivity {
                 return;
             }
 
+            if (currentStockOfSize <= 0) {
+                Toast.makeText(this, "Size này đã hết hàng!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (product != null) {
                 FirebaseUser currentUser = mAuth.getCurrentUser();
 
                 if (currentUser == null) {
-                    // --- KHÁCH (Lưu vào SQL) ---
                     CartItem item = new CartItem(
                             product.getId(),
                             product.getName(),
@@ -81,16 +88,13 @@ public class ProductDetailActivity extends AppCompatActivity {
                             product.getImageUrl(),
                             1,
                             selectedSize,
-                            0 // <-- SỬA LỖI Ở ĐÂY: Thêm số 0 cho tham số stock
+                            currentStockOfSize
                     );
                     sqlHelper.addToCart(item);
-                    Toast.makeText(this, "Đã thêm vào giỏ tạm: Size " + selectedSize, Toast.LENGTH_SHORT).show();
-
-                    // Chuyển sang giỏ hàng xem ngay
+                    Toast.makeText(this, "Đã thêm vào giỏ: Size " + selectedSize, Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ProductDetailActivity.this, CartActivity.class);
                     startActivity(intent);
                 } else {
-                    // --- ĐÃ ĐĂNG NHẬP (Lưu vào Firebase) ---
                     addToFirestore(currentUser.getUid());
                 }
             }
@@ -98,9 +102,7 @@ public class ProductDetailActivity extends AppCompatActivity {
     }
 
     private void addToFirestore(String userId) {
-        // Tạo ID duy nhất cho sản phẩm trong giỏ: UserID + ProductID + Size
         String cartId = userId + "_" + product.getId() + "_" + selectedSize;
-
         Map<String, Object> cartMap = new HashMap<>();
         cartMap.put("id_user", userId);
         cartMap.put("id_product", product.getId());
@@ -109,7 +111,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         cartMap.put("image", product.getImageUrl());
         cartMap.put("quantity", 1);
         cartMap.put("size", selectedSize);
-        // Lưu ý: Trên Firebase Cart chưa cần lưu stock, ta lấy stock từ bảng Products khi thanh toán
+        cartMap.put("stock", currentStockOfSize); // Lưu stock của size để check
 
         db.collection("Cart").document(cartId)
                 .set(cartMap)
@@ -127,6 +129,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         txtName = findViewById(R.id.txt_detail_name);
         txtPrice = findViewById(R.id.txt_detail_price);
         txtDesc = findViewById(R.id.txt_detail_desc);
+        txtStockInfo = findViewById(R.id.txt_detail_stock);
         btnAddToCart = findViewById(R.id.btn_add_to_cart);
 
         btnS = findViewById(R.id.size_s);
@@ -137,22 +140,23 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private void selectSize(String size) {
         selectedSize = size;
-
         resetSizeButton(btnS);
         resetSizeButton(btnM);
         resetSizeButton(btnL);
         resetSizeButton(btnXL);
 
         TextView selectedBtn = null;
-        if (size.equals("S")) selectedBtn = btnS;
-        else if (size.equals("M")) selectedBtn = btnM;
-        else if (size.equals("L")) selectedBtn = btnL;
-        else if (size.equals("XL")) selectedBtn = btnXL;
+        if (size.equals("S")) { selectedBtn = btnS; currentStockOfSize = product.getStockS(); }
+        else if (size.equals("M")) { selectedBtn = btnM; currentStockOfSize = product.getStockM(); }
+        else if (size.equals("L")) { selectedBtn = btnL; currentStockOfSize = product.getStockL(); }
+        else if (size.equals("XL")) { selectedBtn = btnXL; currentStockOfSize = product.getStockXL(); }
 
         if (selectedBtn != null) {
             selectedBtn.setBackgroundResource(R.drawable.bg_size_selected);
             selectedBtn.setTextColor(Color.WHITE);
         }
+
+        txtStockInfo.setText("Kho size " + size + ": " + currentStockOfSize);
     }
 
     private void resetSizeButton(TextView btn) {
